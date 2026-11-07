@@ -7,169 +7,189 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --hint-color: #707579;
-            --button-color: #000000;
-            --button-text-color: #ffffff;
-            --card-bg: #f4f4f5;
+            --bg-grad-1: #e0c3fc;
+            --bg-grad-2: #8ec5fc;
+            --text-color: #1c1c1e;
+            --hint-color: #636366;
+            --card-bg: rgba(255, 255, 255, 0.85);
         }
 
         body.dark {
-            --bg-color: #18181a;
+            --bg-grad-1: #2a0845;
+            --bg-grad-2: #6441a5;
             --text-color: #ffffff;
-            --hint-color: #999999;
-            --button-color: #ffffff;
-            --button-text-color: #000000;
-            --card-bg: #232326;
+            --hint-color: #ebebf5;
+            --card-bg: rgba(30, 30, 30, 0.7);
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
+            background: linear-gradient(135deg, var(--bg-grad-1), var(--bg-grad-2));
             color: var(--text-color);
             margin: 0;
             padding: 20px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             box-sizing: border-box;
+            backdrop-filter: blur(10px);
         }
 
         .card {
             background-color: var(--card-bg);
-            border-radius: 24px;
-            padding: 24px;
+            border-radius: 28px;
+            padding: 32px 24px;
             width: 100%;
-            max-width: 400px;
+            max-width: 340px;
             text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(20px);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
         }
 
-        .avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin-bottom: 16px;
-            object-fit: cover;
-            background-color: #ddd;
+        @keyframes slideUp {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .gift-icon {
+            font-size: 64px;
+            margin-bottom: 12px;
+            display: inline-block;
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
         h1 {
-            font-size: 22px;
-            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            letter-spacing: -0.5px;
         }
 
         p {
-            font-size: 14px;
+            font-size: 15px;
             color: var(--hint-color);
-            margin: 0 0 24px 0;
-            line-height: 1.4;
+            margin: 0 0 28px 0;
+            line-height: 1.5;
         }
 
         .btn {
-            background-color: var(--button-color);
-            color: var(--button-text-color);
+            background-color: #000000;
+            color: #ffffff;
             border: none;
-            border-radius: 50px;
-            padding: 14px 24px;
-            font-size: 16px;
+            border-radius: 16px;
+            padding: 16px 24px;
+            font-size: 17px;
             font-weight: 600;
             width: 100%;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
         }
 
         .btn:active {
-            opacity: 0.8;
+            transform: scale(0.96);
         }
 
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <!-- Если у тебя есть аватарка в репозитории, замени src на "./avatar.png" -->
-        <img src="https://via.placeholder.com/80" alt="Hion Shop" class="avatar" id="avatarImg">
+        <div class="gift-icon">🎁</div>
         <h1 id="shopTitle">Hion Shop</h1>
-        <p id="shopDesc">Участвуйте в розыгрыше призов прямо сейчас.</p>
+        <p id="shopDesc">Участвуй в новом розыгрыше!<br>Выполни условия и забери приз.</p>
         
-        <button class="btn" id="participateBtn" onclick="submitData()">Участвовать</button>
+        <button class="btn" id="participateBtn" onclick="submitData()">Принять участие</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Автоматическая адаптация под темную/светлую тему Telegram
         if (tg.colorScheme === 'dark') {
             document.body.classList.add('dark');
         }
 
-        // Получаем параметры розыгрыша из URL ссылки кнопки
         const urlParams = new URLSearchParams(window.location.search);
-        const gwId = urlParams.get('gw_id');
+        const gwId = urlParams.get('gw_id') || 1;
         const btnColor = urlParams.get('color');
 
         const btn = document.getElementById('participateBtn');
+        let sponsorUrl = ""; // Сюда сохраним ссылку на канал-спонсор
+
         if (btnColor) {
-            btn.style.backgroundColor = decodeURIComponent(btnColor);
-            // Автоматически подбираем цвет текста на кнопке (черный или белый)
-            btn.style.color = '#ffffff'; 
+            btn.style.backgroundColor = '#' + btnColor;
+            btn.style.color = (btnColor.toUpperCase() === 'FFFFFF') ? '#000000' : '#ffffff';
         }
 
         async function submitData() {
+            // Если кнопка сейчас требует подписки
+            if (sponsorUrl !== "") {
+                tg.openTelegramLink(sponsorUrl);
+                // Сбрасываем кнопку обратно, чтобы юзер мог проверить подписку после возвращения
+                setTimeout(() => {
+                    btn.innerText = "Проверить подписку";
+                    sponsorUrl = ""; 
+                }, 2000);
+                return;
+            }
+
             btn.disabled = true;
-            btn.innerText = "Проверка...";
+            btn.innerText = "Загрузка...";
+            tg.HapticFeedback.impactOccurred('medium'); // Вибрация
 
-            // Достаем данные пользователя из Telegram SDK
-            const user = tg.initDataUnsafe?.user || { id: 12345678, username: "TestUser" };
-
-            const payload = {
-                gw_id: gwId || 1, // Если открыто вне бота, берем заглушку
-                user_id: user.id,
-                username: user.username || "Anonymous"
-            };
+            const user = tg.initDataUnsafe?.user || { id: 1111, username: "test" };
 
             try {
-                // ТВОЯ АКТУАЛЬНАЯ ССЫЛКА ОТ NGROK:
+                // Обращаемся к Python-серверу (он теперь крутится вместе с ботом)
                 const response = await fetch('https://jasmine-pregnancy-untried.ngrok-free.dev/api/participate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gw_id: gwId, user_id: user.id, username: user.username })
                 });
 
                 const result = await response.json();
 
-                if (response.ok) {
-                    if (result.status === 'success') {
-                        btn.innerText = "✅ Вы участник!";
-                        tg.showAlert("Вы успешно зарегистрированы в розыгрыше!");
-                    } else if (result.status === 'already_participating') {
-                        btn.innerText = "Вы уже участвуете";
-                        tg.showAlert("Вы уже принимаете участие в этом розыгрыше!");
-                    }
+                if (result.status === 'success') {
+                    btn.innerText = "✅ Вы участвуете!";
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.showAlert("Успешно! Ждите итогов розыгрыша.");
+                } else if (result.status === 'already_participating') {
+                    btn.innerText = "Вы уже в деле 😎";
+                    btn.disabled = false;
+                } else if (result.status === 'not_subscribed') {
+                    // ЕСЛИ НЕ ПОДПИСАН:
+                    btn.disabled = false;
+                    btn.innerText = "Сначала подпишитесь 📢";
+                    sponsorUrl = result.url; // Сохраняем ссылку, чтобы открыть её при следующем клике
+                    tg.HapticFeedback.notificationOccurred('warning');
                 } else {
                     btn.disabled = false;
-                    btn.innerText = "Участвовать";
-                    tg.showAlert("Ошибка сервера. Попробуйте позже.");
+                    btn.innerText = "Принять участие";
+                    tg.showAlert("Произошла ошибка, попробуйте позже.");
                 }
             } catch (error) {
                 console.error(error);
                 btn.disabled = false;
-                btn.innerText = "Участвовать";
-                tg.showAlert("Ошибка сети. Проверьте соединение.");
+                btn.innerText = "Принять участие";
+                tg.showAlert("Ошибка сети. Бот сейчас выключен.");
             }
         }
     </script>
 </body>
-</html>
 </html>
