@@ -2,399 +2,174 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hion Shop</title>
-    <!-- Telegram Web App SDK -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hion Shop — Розыгрыш</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Системные шрифты Apple и Android для нативного ощущения */
         :root {
-            --bg-color: var(--tg-theme-bg-color, #ffffff);
-            --text-color: var(--tg-theme-text-color, #000000);
-            --hint-color: var(--tg-theme-hint-color, #8e8e93);
-            --secondary-bg: var(--tg-theme-secondary-bg-color, #f2f2f7);
-            --btn-color: var(--tg-theme-button-color, #007aff);
-            --accent-glow: rgba(0, 122, 255, 0.15);
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --hint-color: #707579;
+            --button-color: #000000;
+            --button-text-color: #ffffff;
+            --card-bg: #f4f4f5;
         }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --accent-glow: rgba(10, 132, 255, 0.15);
-            }
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto", sans-serif;
-            /* Убираем синее выделение при тапе на мобилках */
-            -webkit-tap-highlight-color: transparent;
+        body.dark {
+            --bg-color: #18181a;
+            --text-color: #ffffff;
+            --hint-color: #999999;
+            --button-color: #ffffff;
+            --button-text-color: #000000;
+            --card-bg: #232326;
         }
 
         body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
+            margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 20px;
-            overflow: hidden;
-            position: relative;
+            box-sizing: border-box;
         }
 
-        /* Анимированный фон (Сферы света) */
-        .bg-glow {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: var(--btn-color);
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.15;
-            z-index: -1;
-            animation: pulseGlow 8s infinite alternate ease-in-out;
-        }
-        
-        .bg-glow.top { top: -100px; left: -100px; }
-        .bg-glow.bottom { bottom: -100px; right: -100px; animation-delay: -4s; }
-
-        .container {
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 24px;
             width: 100%;
-            max-width: 380px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            max-width: 400px;
             text-align: center;
-            animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Стеклянная карточка */
-        .glass-card {
-            background: var(--secondary-bg);
-            border-radius: 28px;
-            padding: 32px 24px;
-            width: 100%;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.04);
-            border: 1px solid rgba(128, 128, 128, 0.1);
-        }
-
-        /* Красивая аватарка */
-        .avatar-container {
-            position: relative;
-            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
 
         .avatar {
-            width: 110px;
-            height: 110px;
-            border-radius: 35%; /* Форма суперэллипса (squircle) как иконки iOS */
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 16px;
             object-fit: cover;
-            border: 3px solid var(--btn-color);
-            box-shadow: 0 8px 24px var(--accent-glow);
+            background-color: #ddd;
         }
 
         h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            font-size: 22px;
+            margin: 0 0 8px 0;
         }
 
-        p.subtitle {
+        p {
+            font-size: 14px;
             color: var(--hint-color);
-            font-size: 15px;
+            margin: 0 0 24px 0;
             line-height: 1.4;
-            margin-bottom: 0;
         }
 
-        /* Блок капчи (Анимация высоты и прозрачности) */
-        #captchaBlock {
-            overflow: hidden;
-            max-height: 0;
-            opacity: 0;
-            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        #captchaBlock.active {
-            max-height: 200px;
-            opacity: 1;
-            margin-top: 24px;
-            padding-top: 24px;
-            border-top: 1px solid rgba(128, 128, 128, 0.1);
-        }
-
-        .captcha-question {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--btn-color);
-            margin-bottom: 16px;
-        }
-
-        /* Удобный инпут */
-        input[type="tel"] {
+        .btn {
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 50px;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
             width: 100%;
-            background: var(--bg-color);
-            color: var(--text-color);
-            border: 2px solid transparent;
-            border-radius: 16px;
-            padding: 16px;
-            font-size: 24px;
-            font-weight: 700;
-            text-align: center;
-            outline: none;
-            transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-            -moz-appearance: textfield; /* Убираем стрелочки */
-        }
-        
-        input[type="tel"]:focus {
-            border-color: var(--btn-color);
-            box-shadow: 0 0 0 4px var(--accent-glow);
+            cursor: pointer;
+            transition: opacity 0.2s;
         }
 
-        /* Экран успеха */
-        #successScreen {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        .btn:active {
+            opacity: 0.8;
         }
 
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--btn-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 24px;
-            box-shadow: 0 12px 32px var(--accent-glow);
-            animation: popIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        .success-icon svg {
-            width: 40px;
-            height: 40px;
-            stroke: #ffffff; /* Всегда белая галочка на цветной кнопке */
-        }
-
-        /* Эффект ошибки (тряска) */
-        .shake {
-            animation: shakeError 0.4s ease-in-out;
-        }
-
-        /* Анимации */
-        @keyframes pulseGlow {
-            0% { transform: scale(1) translate(0, 0); opacity: 0.1; }
-            100% { transform: scale(1.5) translate(20px, -20px); opacity: 0.2; }
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            70% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes shakeError {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-8px); }
-            40%, 80% { transform: translateX(8px); }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
 
-    <!-- Фоновые сферы -->
-    <div class="bg-glow top"></div>
-    <div class="bg-glow bottom"></div>
-
-    <!-- Основной экран -->
-    <div class="container" id="mainScreen">
-        <div class="glass-card">
-            
-            <div class="avatar-container">
-                <img src="https://fotora.ru/uploaded/?ID=QBLGA07112026170432" alt="Hion Shop" class="avatar">
-            </div>
-            
-            <h1>Hion Shop</h1>
-            <p class="subtitle" id="mainSubtitle">Участвуйте в розыгрыше призов прямо сейчас.</p>
-            
-            <!-- Блок проверки -->
-            <div id="captchaBlock">
-                <p style="color: var(--hint-color); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Анти-бот проверка</p>
-                <div class="captcha-question" id="captchaQuestion">? + ?</div>
-                <!-- inputmode="numeric" для идеального вызова циферблата -->
-                <input type="tel" id="captchaInput" placeholder="Ваш ответ" autocomplete="off" inputmode="numeric">
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Экран успеха -->
-    <div class="container" id="successScreen">
-        <div class="success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-        </div>
-        <h1 id="successTitle">Вы в игре!</h1>
-        <p class="subtitle" id="successText">Ваша заявка принята. Победители получат сообщение от бота.</p>
+    <div class="card">
+        <!-- Если у тебя есть аватарка в репозитории, замени src на "./avatar.png" -->
+        <img src="https://via.placeholder.com/80" alt="Hion Shop" class="avatar" id="avatarImg">
+        <h1 id="shopTitle">Hion Shop</h1>
+        <p id="shopDesc">Участвуйте в розыгрыше призов прямо сейчас.</p>
+        
+        <button class="btn" id="participateBtn" onclick="submitData()">Участвовать</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
 
-        // Настройка нативной MainButton
-        const mainBtn = tg.MainButton;
-        mainBtn.setText("ПРИНЯТЬ УЧАСТИЕ");
-        mainBtn.show(); // Показываем сразу
+        // Автоматическая адаптация под темную/светлую тему Telegram
+        if (tg.colorScheme === 'dark') {
+            document.body.classList.add('dark');
+        }
 
-        // Элементы
-        const captchaBlock = document.getElementById('captchaBlock');
-        const captchaQuestion = document.getElementById('captchaQuestion');
-        const captchaInput = document.getElementById('captchaInput');
-        const glassCard = document.querySelector('.glass-card');
-        
-        let expectedAnswer = 0;
-        let currentState = 'intro'; // intro -> captcha -> loading -> done
-
-        // Кастомный цвет кнопки (если передан админом)
+        // Получаем параметры розыгрыша из URL ссылки кнопки
         const urlParams = new URLSearchParams(window.location.search);
-        let customColor = urlParams.get('color');
-        if (customColor) {
-            if (!customColor.startsWith('#')) customColor = '#' + customColor;
-            // Обновляем цвета UI и нативной кнопки
-            document.documentElement.style.setProperty('--btn-color', customColor);
-            mainBtn.color = customColor;
-        }
+        const gwId = urlParams.get('gw_id');
+        const btnColor = urlParams.get('color');
 
-        // Логика состояний нативной кнопки
-        mainBtn.onClick(() => {
-            tg.HapticFeedback.impactOccurred('light');
-
-            if (currentState === 'intro') {
-                showCaptcha();
-            } else if (currentState === 'captcha') {
-                checkCaptcha();
-            }
-        });
-
-        // Нажатие Enter на клавиатуре телефона тоже триггерит проверку
-        captchaInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkCaptcha();
-            }
-        });
-
-        function showCaptcha() {
-            currentState = 'captcha';
-            mainBtn.setText("ПОДТВЕРДИТЬ");
-            
-            // Генерируем пример
-            const num1 = Math.floor(Math.random() * 10) + 1;
-            const num2 = Math.floor(Math.random() * 10) + 1;
-            expectedAnswer = num1 + num2;
-            captchaQuestion.innerText = `${num1} + ${num2} = ?`;
-            
-            // Раскрываем блок
-            captchaBlock.classList.add('active');
-            
-            // Автоматически ставим фокус на инпут, чтобы сразу открылась клавиатура (с небольшой задержкой для плавности)
-            setTimeout(() => {
-                captchaInput.focus();
-            }, 300);
-        }
-
-        function checkCaptcha() {
-            const userAnswer = parseInt(captchaInput.value);
-
-            if (isNaN(userAnswer) || userAnswer !== expectedAnswer) {
-                // Ошибка: Сильная вибрация, тряска карточки, очистка поля
-                tg.HapticFeedback.notificationOccurred('error');
-                
-                glassCard.classList.remove('shake');
-                void glassCard.offsetWidth; // Хак для перезапуска анимации
-                glassCard.classList.add('shake');
-                
-                captchaInput.value = '';
-                
-                // Генерируем новый пример
-                setTimeout(() => {
-                    const num1 = Math.floor(Math.random() * 10) + 1;
-                    const num2 = Math.floor(Math.random() * 10) + 1;
-                    expectedAnswer = num1 + num2;
-                    captchaQuestion.innerText = `${num1} + ${num2} = ?`;
-                }, 200);
-                return;
-            }
-
-            // Успех капчи - отправляем данные
-            submitData();
+        const btn = document.getElementById('participateBtn');
+        if (btnColor) {
+            btn.style.backgroundColor = decodeURIComponent(btnColor);
+            // Автоматически подбираем цвет текста на кнопке (черный или белый)
+            btn.style.color = '#ffffff'; 
         }
 
         async function submitData() {
-            currentState = 'loading';
-            mainBtn.showProgress(true); // Крутилка загрузки на нативной кнопке
-            mainBtn.disable();
+            btn.disabled = true;
+            btn.innerText = "Проверка...";
 
-            const user = tg.initDataUnsafe?.user;
-            const gwId = urlParams.get('gw_id');
-            
-            // Заглушка для отладки без телеграма
+            // Достаем данные пользователя из Telegram SDK
+            const user = tg.initDataUnsafe?.user || { id: 12345678, username: "TestUser" };
+
             const payload = {
-                gw_id: gwId || '1',
-                user_id: user?.id || 1234567,
-                username: user?.username || user?.first_name || 'TestUser'
+                gw_id: gwId || 1, // Если открыто вне бота, берем заглушку
+                user_id: user.id,
+                username: user.username || "Anonymous"
             };
 
             try {
-                const response = await fetch('/api/participate', {
+                // ТВОЯ АКТУАЛЬНАЯ ССЫЛКА ОТ NGROK:
+                const response = await fetch('https://jasmine-pregnancy-untried.ngrok-free.dev/api/participate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
+                const result = await response.json();
 
-                // Успешно!
-                tg.HapticFeedback.notificationOccurred('success');
-                mainBtn.hide(); // Прячем кнопку
-
-                document.getElementById('mainScreen').style.display = 'none';
-                const successScreen = document.getElementById('successScreen');
-                successScreen.style.display = 'flex';
-
-                if (data.status === 'already_participating') {
-                    document.getElementById('successTitle').innerText = 'Вы уже в игре!';
-                    document.getElementById('successText').innerText = 'Ваша заявка уже была успешно зарегистрирована ранее.';
+                if (response.ok) {
+                    if (result.status === 'success') {
+                        btn.innerText = "✅ Вы участник!";
+                        tg.showAlert("Вы успешно зарегистрированы в розыгрыше!");
+                    } else if (result.status === 'already_participating') {
+                        btn.innerText = "Вы уже участвуете";
+                        tg.showAlert("Вы уже принимаете участие в этом розыгрыше!");
+                    }
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = "Участвовать";
+                    tg.showAlert("Ошибка сервера. Попробуйте позже.");
                 }
-
-                // Закрываем Web App через 2.5 секунды
-                setTimeout(() => {
-                    tg.close();
-                }, 2500);
-
             } catch (error) {
-                // Ошибка сети
-                tg.HapticFeedback.notificationOccurred('error');
-                tg.showAlert('Ошибка сети. Проверьте соединение.');
-                
-                currentState = 'captcha';
-                mainBtn.hideProgress();
-                mainBtn.enable();
-                mainBtn.setText("ПОПРОБОВАТЬ СНОВА");
+                console.error(error);
+                btn.disabled = false;
+                btn.innerText = "Участвовать";
+                tg.showAlert("Ошибка сети. Проверьте соединение.");
             }
         }
     </script>
 </body>
+</html>
 </html>
