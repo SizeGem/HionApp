@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание розыгрыша</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #f3f2f8;
+            --text-color: #000000;
+            --card-bg: #ffffff;
+            --hint-color: #8e8e93;
+            --border-color: #c6c6c8;
+        }
+        body.dark {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --card-bg: #1c1c1e;
+            --hint-color: #ebebf5;
+            --border-color: #38383a;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0; padding: 20px;
+        }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 14px; color: var(--hint-color); margin-bottom: 6px; margin-left: 12px; }
+        input, select {
+            width: 100%; box-sizing: border-box; padding: 14px 16px;
+            background-color: var(--card-bg); color: var(--text-color);
+            border: none; border-radius: 12px; font-size: 16px;
+            box-shadow: inset 0 0 0 1px var(--border-color); outline: none;
+            appearance: none;
+        }
+        .color-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+        }
+        .color-btn {
+            padding: 12px; border-radius: 12px; border: 2px solid transparent;
+            text-align: center; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .color-btn.active { border-color: #007aff; transform: scale(0.95); }
+        .main-btn {
+            background-color: #007aff; color: white; border: none;
+            width: 100%; padding: 16px; border-radius: 14px; font-size: 17px;
+            font-weight: 600; margin-top: 20px; cursor: pointer;
+        }
+        .main-btn:disabled { opacity: 0.5; }
+    </style>
+</head>
+<body>
+    <h2>🎁 Новый розыгрыш</h2>
+
+    <div class="form-group">
+        <label>Что разыгрываем?</label>
+        <input type="text" id="prize" placeholder="Например: Секретный бокс" required>
+    </div>
+
+    <div class="form-group">
+        <label>Количество победителей</label>
+        <input type="number" id="winners" placeholder="1" min="1" value="1" required>
+    </div>
+
+    <div class="form-group">
+        <label>Канал-спонсор (Обязательная подписка)</label>
+        <select id="sponsor">
+            <option value="none">🚫 Без подписки</option>
+            <!-- Заполнится через API -->
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Куда отправить розыгрыш?</label>
+        <select id="target">
+            <!-- Заполнится через API -->
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Цвет кнопки участия</label>
+        <div class="color-grid" id="colorGrid">
+            <div class="color-btn active" data-color="000000" style="background:#000; color:#fff;">Черный</div>
+            <div class="color-btn" data-color="FFFFFF" style="background:#fff; color:#000; border:1px solid #ccc">Белый</div>
+            <div class="color-btn" data-color="007AFF" style="background:#007AFF; color:#fff;">Синий</div>
+            <div class="color-btn" data-color="FF3B30" style="background:#FF3B30; color:#fff;">Красный</div>
+            <div class="color-btn" data-color="34C759" style="background:#34C759; color:#fff;">Зеленый</div>
+            <div class="color-btn" data-color="AF52DE" style="background:#AF52DE; color:#fff;">Фиолет</div>
+        </div>
+    </div>
+
+    <button class="main-btn" id="submitBtn" onclick="createGiveaway()">Опубликовать</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        if (tg.colorScheme === 'dark') document.body.classList.add('dark');
+
+        // Твоя ссылка NGROK для запросов к серверу
+        const API_URL = "https://jasmine-pregnancy-untried.ngrok-free.dev";
+        const user = tg.initDataUnsafe?.user || { id: 8104225231 }; // Твой ID для теста
+
+        let selectedColor = "000000";
+
+        // Выбор цвета
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                selectedColor = this.getAttribute('data-color');
+            });
+        });
+
+        // Загрузка списка каналов при открытии
+        async function loadChannels() {
+            try {
+                const res = await fetch(`${API_URL}/api/channels?user_id=${user.id}`);
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    const sponsorSelect = document.getElementById('sponsor');
+                    const targetSelect = document.getElementById('target');
+                    
+                    if(data.channels.length === 0) {
+                        tg.showAlert("Бот не добавлен в каналы как администратор!");
+                        tg.close();
+                        return;
+                    }
+
+                    data.channels.forEach(ch => {
+                        const opt1 = new Option(ch.title, ch.id);
+                        const opt2 = new Option(ch.title, ch.id);
+                        sponsorSelect.add(opt1);
+                        targetSelect.add(opt2);
+                    });
+                } else {
+                    tg.showAlert("У вас нет прав администратора.");
+                    tg.close();
+                }
+            } catch (e) {
+                tg.showAlert("Ошибка соединения с сервером.");
+            }
+        }
+
+        // Отправка формы
+        async function createGiveaway() {
+            const prize = document.getElementById('prize').value;
+            const winners = document.getElementById('winners').value;
+            const sponsor_id = document.getElementById('sponsor').value;
+            const channel_id = document.getElementById('target').value;
+            const btn = document.getElementById('submitBtn');
+
+            if (!prize || !winners || !channel_id) return tg.showAlert("Заполните все поля!");
+
+            btn.disabled = true;
+            btn.innerText = "Публикация...";
+
+            try {
+                const res = await fetch(`${API_URL}/api/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: user.id,
+                        prize: prize,
+                        winners: winners,
+                        color: selectedColor,
+                        sponsor_id: sponsor_id,
+                        channel_id: channel_id
+                    })
+                });
+                
+                const result = await res.json();
+                if (result.status === 'success') {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.close(); // Автоматически закрываем Mini App после успеха
+                } else {
+                    tg.showAlert("Ошибка публикации: " + result.message);
+                    btn.disabled = false;
+                    btn.innerText = "Опубликовать";
+                }
+            } catch (e) {
+                tg.showAlert("Ошибка сети.");
+                btn.disabled = false;
+                btn.innerText = "Опубликовать";
+            }
+        }
+
+        loadChannels();
+    </script>
+</body>
+</html>
